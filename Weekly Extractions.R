@@ -1,6 +1,11 @@
-library(readxl)
-Daily_Collections_AR <- read_excel("Cash_Semana.xlsx", 
-                          sheet = "Dias")
+# library(readxl)
+# Daily_Collections_AR <- read_excel("Cash_Semana.xlsx", 
+#                           sheet = "Dias")
+
+library(readr)
+Cash_Semana <- read_delim("Cash_Semana.csv", 
+                          ";", escape_double = FALSE, col_types = cols(Chave = col_date(format = "%d/%m/%Y")), 
+                          trim_ws = TRUE)
 
 library(tsibble)
 library(hts)
@@ -9,55 +14,48 @@ library(furrr)
 library(foreach)
 library(xts)
 library(thief)
-Daily_Collections_AR$Chave <- as.Date(Daily_Collections_AR$Chave, "%Y/%m/%d")
 
-Tibble_Frame <- as.tsibble(Daily_Collections_AR, index = Chave)
+
+
+
+
+
+Split <- Cash_Semana[,1]
+Cash_Semana <-  Cash_Semana[,-1]
+
+Cash_Semana[] <- lapply(Cash_Semana, function(x) as.numeric(as.character(x)))
+
+Cash_Semana <- cbind(Split,Cash_Semana)
+
+
+Tibble_Frame <- as.tsibble(Cash_Semana, index = Chave)
 
 ped_gaps <- Tibble_Frame %>%
   fill_na(.)
 
-Weeks <- Tibble_Frame %>%
-  group_by(year_week = yearweek(Chave)) %>%
-  mutate_all(funs(as.numeric)) %>% 
+Weeks <- tail(ped_gaps,- (nrow(ped_gaps) %% 7 )) #%>%
+  #group_by(year_week = yearweek(Chave)) 
+
+test <- rep(1:100000, each = 7, len = nrow(Weeks))
+
+Wekks <- as.tibble(cbind(test,Weeks[,-1]))
+
+
+Fake_Weeks <- Wekks %>% 
+  group_by(test) %>%
   summarise_all(funs(sum),na.rm = T)
 
-Weeks <- Tibble_Frame[,-1] %>%
-  summarise_all(tile_dbl(., mean, .size = 7,na.rm = TRUE))
-
-
-
-Weekly <- map_df(ped_gaps[,-1],function(col) tile_dbl(col,mean, .size = 7,na.rm = TRUE))
-
-Teste_Sum <- Weekly[,1]
-T
-Teste_Sum2 <- ped_gaps[,2]%>% sum(na.rm = T)
-head(Teste_Sum2,14)
-Some <- Teste_Sum2[8:14,] %>% as.data.frame() %>% as.vector()
-Some2 <- as.numeric(unlist(Some))
-sum(Some2, na.rm = T)
-tail(Teste_Sum2,7) %>% sum(na.rm = T)
-# Example 2 with two simple hierarchies (geography and product) to show the argument "characters"
-
-Test <- ped_gaps[,-1]
-
-xts(x=Tibble_Frame[,-1], order.by=Tibble_Frame[,1])
+ALL_Y <-  Fake_Weeks[,-1]
 
 Y_Season<- msts(Test, seasonal.periods=c(7,365.25), start = c(2011))
 
 x1 <- gts(Y_Season, characters = list(c(5, 5), c(5, 5)))
 frequency(x1)
 
-
-
 h <- 12
 ally <- aggts(x1)
 frequency(x1) <- 2
 
-
-Testar <- as.tsibble(ally1)
-
-
-str(ally1)
 str(ally)
 allf <- matrix(NA,nrow = h,ncol = ncol(ally1))
 foreach(i = 1:ncol(ally1)) %dopar% {
