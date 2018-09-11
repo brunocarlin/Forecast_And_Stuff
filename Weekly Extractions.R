@@ -14,8 +14,8 @@ library(furrr)
 library(foreach)
 library(xts)
 library(thief)
-
-
+library(tictoc)
+library(furrr)
 
 
 
@@ -47,41 +47,39 @@ Fake_Weeks <- Wekks %>%
 
 ALL_Y <-  Fake_Weeks[,-1]
 
-Y_Season<- msts(Test, seasonal.periods=c(7,365.25), start = c(2011))
+Y_Season<- msts(ALL_Y, seasonal.periods=c(4.28,52.18), start = c(2011))
 
 x1 <- gts(Y_Season, characters = list(c(5, 5), c(5, 5)))
-frequency(x1)
 
-h <- 12
+
+h <- 4
 ally <- aggts(x1)
-frequency(x1) <- 2
 
-str(ally)
-allf <- matrix(NA,nrow = h,ncol = ncol(ally1))
-foreach(i = 1:ncol(ally1)) %dopar% {
-  allf[,i] <- forecast(tbats(ally1[,i]),h = h)$mean
+
+library(foreach)
+library(doMC)
+registerDoMC(2)
+
+#str(ally)
+
+allf <- matrix(NA,nrow = h,ncol = ncol(ally))
+
+Make_Forecast <- function(y,h) {
+forecast(stlm(y),h)$mean
 }
 
-Mean_Tbats <- function(y,h = 12) {
-  forecast(tbats(y),h,lambda = 0)$mean
-}
+tic()
+test <- lapply(ally,Make_Forecast,4)
+toc()
+allf <- as.data.frame(test)
+# 
+# foreach(i = 1:ncol(ally)) %dopar% {
+#   allf[,i] <- forecast(tbats(ally[,i]),h = h)$mean
+# }
 
-Mean_stlm <- function(y,h = 12) {
-  forecast(thief(y),h)$mean
-}
-forecast(stlm(ally2),12,lambda ="auto")
-ally2 <- ally[,1]
-forecast(tbats(ally2),12)$mean
+plan(multiprocess, workers = 3)
 
-sum(Mean_Tbats(ally2,31))
-sum(Mean_stlm(ally2,31))
-
-T <- tbats(ally2)
-
-map(ally2,Mean_Tbats)
-
-teste <- lapply(ally1,Mean_Tbats)
-allf <- as.ts(allf, start = 51)
+allf <- as.ts(allf, start = 1000)
 y.f <- combinef(allf, groups = get_groups(x1), keep ="bottom", algorithms = "lu")
 
 Teste2 <- forecast(
