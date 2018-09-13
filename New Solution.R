@@ -50,13 +50,16 @@ ALL_Y <-  Fake_Weeks[,-1]
 ALL_Y2  <- as.matrix(ALL_Y) 
 ALL_Y2[ALL_Y2 <1] <- 1
 
-Y_Season<- msts(ALL_Y2, seasonal.periods=c(4.28,52.18), start = c(2011))
+library(lubridate)
 
+#Y_Season<- msts(ALL_Y2, seasonal.periods=c(4.28,52.18), start = c(2011))
+Y_Season <- ts(ALL_Y2,frequency = 365.25/7, start =  decimal_date(as.Date("2011-09-02")))
 x1 <- gts(Y_Season, characters = list(c(5, 5), c(5, 5)))
 
 
 h <- 4
 ally <- aggts(x1)
+
 
 #str(ally)
 
@@ -66,7 +69,7 @@ Make_Forecast <- function(y,h) {
   forecast(stlm(y, lambda = 0),h)$mean
 }
 
-Make_Forecast(ally[,3],4)
+#Make_Forecast(ally[,3],4)
 
 tic()
 ally <- ally + 1
