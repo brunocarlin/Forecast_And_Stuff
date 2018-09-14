@@ -244,7 +244,4 @@ Multiplication_Forecast <- function(MatrixWeights,Forecast) {
   return(Result)
 }
 
-
-Multiplication_Forecast(as.matrix(Weight_Matrix),Mean_Forecasts)
-
 Answers <- as.vector(unlist(Weight_Matrix)) * Mean_Forecasts

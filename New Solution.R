@@ -16,6 +16,9 @@ library(xts)
 library(thief)
 library(tictoc)
 library(furrr)
+library(forecastHybrid)
+library(lubridate)
+library(hts)
 
 
 
@@ -72,60 +75,54 @@ Make_Forecast <- function(y,h) {
 #Make_Forecast(ally[,3],4)
 
 tic()
-ally <- ally + 1
 test <- lapply(ally,Make_Forecast,4)
 toc()
 allf <- as.data.frame(test)
 
 sum(allf[,1])
-ally[,1]
-k <- test[is.na(test) == TRUE]
-new_DF <- allf[rowSums(is.na(allf)) > 0,]
-
-Y_Season<- msts(ALL_Y, seasonal.periods=c(4.28,52.18), start = c(2011))
-
-x1 <- gts(Y_Season, characters = list(c(5, 5), c(5, 5)))
 
 
-h <- 4
-ally <- aggts(x1)
+# allf <- matrix(NA,nrow = h,ncol = ncol(ally))
+# 
+# Make_Forecast <- function(y,h) {
+#   forecast(tbats(y),h)$mean
+# }
 
-
-library(foreach)
-library(doMC)
-registerDoMC(2)
-
-#str(ally)
-
-allf <- matrix(NA,nrow = h,ncol = ncol(ally))
-
-Make_Forecast <- function(y,h) {
-  forecast(tbats(y),h)$mean
-}
-
-tic()
-test <- lapply(ally,Make_Forecast,4)
-toc()
-allf <- as.data.frame(test)
 # 
 # foreach(i = 1:ncol(ally)) %dopar% {
 #   allf[,i] <- forecast(tbats(ally[,i]),h = h)$mean
 # }
 
-plan(multiprocess, workers = 3)
+#plan(multiprocess, workers = 3)
 
 
 #allf <- as.ts(allf, start = 1000)
-
-allf <- as.ts(allf, start = 1000)
 
 y.f <- combinef(allf, groups = get_groups(x1), keep ="all", algorithms = "lu")
 
 sum(y.f[,1])
 Teste2 <- forecast(
-  ally, h = 10, method = "comb", algorithms = "lu",
-  FUN = function(x) tbats(x, use.parallel = FALSE)
+  ally,
+  h = 4,
+  method = "comb",
+  algorithms = "lu",
+  positive = T,
+  FUN = function(x)
+    tbats(x, use.parallel = FALSE)
 )
+
+tic()
+Teste2 <- forecast(
+  x1, h = 4, method = "comb", algorithms = "lu",
+  FUN = function(x) hybridModel(x, weights = "cv.errors", cvHorizon = 4,), positive = TRUE
+)
+toc()
+
+
+  Testes <- cvts(ally[,1], FUN = auto.arima,
+     windowSize = 300, maxHorizon = 4)
+  
+sum(Teste2$bts)
 
 tail(ally2)
 
