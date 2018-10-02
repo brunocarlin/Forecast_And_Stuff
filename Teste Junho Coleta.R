@@ -36,15 +36,13 @@ Tibble_Frame <- as.tsibble(Cash_Semana, index = Chave)
 ped_gaps <- Tibble_Frame %>%
   fill_na(.)
 
-
-Weeks <- tail(ped_gaps,- (nrow(ped_gaps) %% 7 )) #%>%
-
+Weeks <- tail(ped_gaps,-31)
+Weeks <-  tail(Weeks,- (nrow(ped_gaps) %% 7 )) #%>%
 
 Primeiro_dia <- Weeks[1][1,1]
 Primeiro_dia_string <- ymd(as.Date(unlist(Primeiro_dia)))
 Primeiro_dia_decimal <- decimal_date(as.Date(Primeiro_dia_string))
 
-ts(1:100,start = )
 #group_by(year_week = yearweek(Chave)) 
 
 test <- rep(1:100000, each = 7, len = nrow(Weeks))
@@ -73,77 +71,10 @@ h <- 4
 ally <- aggts(x1)
 ally1 <- ally
 
-
 Testar <- as.list(ally1)
 Testar<- Testar[1]
+Acctual <- tail(Testar$Total,4)
 
 
-# pós coleta lixo ---------------------------------------------------------
-
-
-
-#str(ally)
-
-# allf <- matrix(NA,nrow = h,ncol = ncol(ally))
-# 
-Make_Forecast <- function(y,h) {
-  forecast(stlm(y, lambda = 0),h)$mean
-}
-
-#Make_Forecast(ally[,3],4)
-
-tic()
-test <- lapply(ally,Make_Forecast,4)
-toc()
-allf <- as.data.frame(test)
-
-sum(allf[,1])
-
-
-# allf <- matrix(NA,nrow = h,ncol = ncol(ally))
-# 
-# Make_Forecast <- function(y,h) {
-#   forecast(tbats(y),h)$mean
-# }
-
-# 
-# foreach(i = 1:ncol(ally)) %dopar% {
-#   allf[,i] <- forecast(tbats(ally[,i]),h = h)$mean
-# }
-
-#plan(multiprocess, workers = 3)
-
-
-#allf <- as.ts(allf, start = 1000)
-
-y.f <- combinef(allf, groups = get_groups(x1), keep ="all", algorithms = "lu")
-
-sum(y.f[,1])
-Teste2 <- forecast(
-  ally,
-  h = 4,
-  method = "comb",
-  algorithms = "lu",
-  positive = T,
-  FUN = function(x)
-    tbats(x, use.parallel = FALSE)
-)
-
-tic()
-Teste2 <- forecast(
-  x1, h = 4, method = "comb", algorithms = "lu",
-  FUN = function(x) hybridModel(x, weights = "cv.errors", cvHorizon = 4,), positive = TRUE
-)
-toc()
-
-
-  Testes <- cvts(ally[,1], FUN = auto.arima,
-     windowSize = 300, maxHorizon = 4)
-  
-sum(Teste2$bts)
-
-tail(ally2)
-
-y.f[,1]
-plot(y.f)
-## End(Not run)
+sum(SomethingTeste2$Total$result - Acctual)
+sum(Acctual)

@@ -736,7 +736,6 @@ Cross_Calculate_Errors_CV <- function(
 
 
 # The M3 Results Function -------------------------------------------------
-toc()
 # Load Funtions from Testing File
 
 SubsetM3 <- list.filter(M3, "MONTHLY" %in% period & n > 50 )
@@ -745,9 +744,10 @@ SubsetM3 <- list.filter(M3, "MONTHLY" %in% period & n > 50 )
 plan(multisession)
 tic("Whole Process")
 
-What <- Testar[1:2]
-Testar <- as.list(ally)
-SomethingTeste2 <-  future_map(Testar[1], safely(function(u) {
+ally1 <- ally
+Testar <- as.list(ally1)
+Testar<- Testar[1:10]
+SomethingTeste2 <-  future_map(Testar, safely(function(u) {
 
   y <- u
   h <- 4
@@ -758,7 +758,8 @@ SomethingTeste2 <-  future_map(Testar[1], safely(function(u) {
   AR <- function(x, h) {
     forecast(auto.arima(x,
                         ic = "bic",
-                        trace = T
+                        trace = T,
+                        lambda = 0
     ), h = h)
   }
   
@@ -767,7 +768,7 @@ SomethingTeste2 <-  future_map(Testar[1], safely(function(u) {
   }
   
   ET <- function(x, h) {
-    forecast(ets(x), h = h)
+    forecast(ets(x, lambda = 0), h = h)
   }
   
   NN <- function(x, h) {
@@ -792,6 +793,10 @@ SomethingTeste2 <-  future_map(Testar[1], safely(function(u) {
   
   SN <- function(x, h) {
     forecast(snaive(x), h = h)
+  }
+  
+  TE <- function(x, h) {
+    forecast(thief(x, usemodel = "arima"), h = h)
   }
   
   Forecast_Functions <- list(
@@ -845,11 +850,14 @@ SomethingTeste2 <-  future_map(Testar[1], safely(function(u) {
 
 })
 ,.progress = T)
-
+toc()
 #save(Something3,file = "Results_K_Folds6.RData")
 #list.filter(Something, "result" %in% period & n > 50)
 #save(SomethingTeste2, file="Teste_4Methods.RData")
-toc()
+
+
+
+# Pós ---------------------------------------------------------------------
 
 
 bad_lengths <- map_lgl(SomethingTeste2, ~is.null(.x$error) == F)
@@ -860,7 +868,7 @@ bad_techs <- SomethingTeste2 %>%
 Temp <- lapply(bad_techs, `[[`, 1)
 
 Results <- as.tibble(melt(Temp))
-
+ResultsCerto <- as.tibble(Temp)
 
 colnames(Results) <- c("OS_Error_Type","Forecast_Horizon","Resultss","In_Sample_Error","Error_Type","Family_Method","Selection_Method","Weight_Scheme","Original_List")  
 
