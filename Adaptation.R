@@ -1,3 +1,7 @@
+
+# library -----------------------------------------------------------------
+
+
 library(future.apply)
 library(furrr)
 
@@ -744,9 +748,6 @@ SubsetM3 <- list.filter(M3, "MONTHLY" %in% period & n > 50 )
 plan(multisession)
 tic("Whole Process")
 
-ally1 <- ally
-Testar <- as.list(ally1)
-Testar<- Testar[1:10]
 SomethingTeste2 <-  future_map(Testar, safely(function(u) {
 
   y <- u

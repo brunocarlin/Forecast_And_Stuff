@@ -36,19 +36,24 @@ Tibble_Frame <- as.tsibble(Cash_Semana, index = Chave)
 ped_gaps <- Tibble_Frame %>%
   fill_na(.)
 
-Weeks <- head(ped_gaps,-31)
+Weeks <- head(ped_gaps,-61)
+
+tail(Weeks)
+tail(ped_gaps)
+
 Weeks <-  tail(Weeks,- (nrow(ped_gaps) %% 7 )) #%>%
 
 Primeiro_dia <- Weeks[1][1,1]
 Primeiro_dia_string <- ymd(as.Date(unlist(Primeiro_dia)))
 Primeiro_dia_decimal <- decimal_date(as.Date(Primeiro_dia_string))
 
-#group_by(year_week = yearweek(Chave)) 
+
 
 test <- rep(1:100000, each = 7, len = nrow(Weeks))
 
-Wekks <- as.tibble(cbind(test,Weeks[,-1]))
 
+Weeks <- head(ped_gaps,-32)
+Wekks <-  tail(Weeks,- (nrow(ped_gaps) %% 7 ))
 
 Fake_Weeks <- Wekks %>% 
   group_by(test) %>%
@@ -77,13 +82,20 @@ Testar<- Testar[1]
 # Actual ------------------------------------------------------------------
 
 
-Weeks <-  tail(ped_gaps,- (nrow(ped_gaps) %% 7 )) #%>%
+Weeks <- head(ped_gaps,-31)
+
+tail(Weeks)
+tail(ped_gaps)
+
+Weeks <-  tail(Weeks,- (nrow(ped_gaps) %% 7 ))
+
 
 Primeiro_dia <- Weeks[1][1,1]
 Primeiro_dia_string <- ymd(as.Date(unlist(Primeiro_dia)))
 Primeiro_dia_decimal <- decimal_date(as.Date(Primeiro_dia_string))
 
 #group_by(year_week = yearweek(Chave)) 
+
 
 test <- rep(1:100000, each = 7, len = nrow(Weeks))
 
@@ -109,6 +121,9 @@ ally1 <- ally
 Actual <- as.list(ally1)
 Actual <- Actual[1]
 
+
+
+
 length(Testar$Total)
 length(Actual$Total)
 
@@ -118,9 +133,12 @@ Final <- end(Cauda)
 TS_Result <- ts(SomethingTeste2$Total$result,frequency = 365.25/7,start = Final)
 
 Erros <- as.vector(TS_Result)-Cauda
-
+mean(Erros)
 Mean_Error(error = Erros)
 Mean_Absolute_Percentage_Error(y = Cauda,error = Erros)
+
+mean((100*Erros)/Cauda)
+
 
 accuracy(TS_Result,Cauda)
 sum(SomethingTeste2$Total$result - Acctual)
