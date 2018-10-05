@@ -115,133 +115,125 @@ Tester_PassadO <- function(dias_actual,dias_forecast) {
   plan(multisession)
   tic("Whole Process")
   
-  Maio_Teste <-  future_map(Testar, safely(function(u) {
-    
-    y <- u
-    h <- 4
-    
-    
-    # Use Forecast Functions --------------------------------------------------
-    
-    AR <- function(x, h) {
-      forecast(auto.arima(x,
-                          ic = "bic",
-                          trace = T,
-                          lambda = 0
-      ), h = h)
-    }
-    
-    TB <- function(x, h) {
-      forecast(tbats(x), h = h)
-    }
-    
-    ET <- function(x, h) {
-      forecast(ets(x, lambda = 0), h = h)
-    }
-    
-    NN <- function(x, h) {
-      forecast(nnetar(x), h = h)
-    }
-    
-    SA <- function(x, h) {
-      forecast(stlm(x, method = "arima"), h = h)
-    }
-    
-    SE <- function(x, h) {
-      forecast(stlm(x, method = "ets"), h = h)
-    }
-    
-    TH <- function(x, h) {
-      forecast(thetaf(x), h = h)
-    }
-    
-    RW <- function(x, h) {
-      rwf(x, drift = TRUE, h = h)
-    }
-    
-    SN <- function(x, h) {
-      forecast(snaive(x), h = h)
-    }
-    
-    TE <- function(x, h) {
-      forecast(thief(x, usemodel = "arima"), h = h)
-    }
-    
-    Forecast_Functions <- list(
-      "Auto_Arima"      =     AR,
-      "Tbats"           =     TB,
-      "Thetha"          =     TH)
-    
-    
-    
-    # Besteira ----------------------------------------------------------------
-    
-    # h <- 4
-    # ally <- aggts(x1)
-    # 
-    # y <- ally[,1]
-    
-    
-    # pos ---------------------------------------------------------------------
-    
-    List_Forecasts <- Forecast_Saver(y,Forecast_Functions,h)
-    
-    
-    Forecasts_Mean <- lapply(List_Forecasts, `[`, c('mean'))
-    
-    Mean_Forecasts <- matrix(unlist(Forecasts_Mean), nrow = length(Forecasts_Mean), byrow = TRUE)
-    
-    colnames(Mean_Forecasts) <- paste("h=", 1:length(Mean_Forecasts[1,]), sep = "")
-    rownames(Mean_Forecasts) <- names(Forecast_Functions)
-    
-    
-    List_of_Errors <- Cross_Calculate_Errors_CV(
-      y = y,
-      List_Functions = Forecast_Functions,
-      h = h,
-      #window = window,
-      Min_Lenght = 24,
-      Max_Fold = 5
-    )
-    
-    
-    Calculated_Errors <- Calculate_Errors(y,List_Errors = List_of_Errors)
-    
-    
-    Inverted_Errors <- lapply(Calculated_Errors,lapply,Invert_List_Accuracy)
-    
-    Weight_Matrix <- lapply(Inverted_Errors,Create_Weight_Matrix)
-    
-    
-    colSums(unlist(Weight_Matrix)  * as.matrix(Mean_Forecasts))
-    
-    
-  })
+    Y_Pred <-  future_map(Testar, safely(function(u) {
+      
+      y <- u
+      h <- 4
+      
+      
+      # Use Forecast Functions --------------------------------------------------
+      
+      AR <- function(x, h) {
+        forecast(auto.arima(x,
+                            ic = "bic",
+                            trace = T,
+                            lambda = 0
+        ), h = h)
+      }
+      
+      TB <- function(x, h) {
+        forecast(tbats(x), h = h)
+      }
+      
+      ET <- function(x, h) {
+        forecast(ets(x, lambda = 0), h = h)
+      }
+      
+      NN <- function(x, h) {
+        forecast(nnetar(x), h = h)
+      }
+      
+      SA <- function(x, h) {
+        forecast(stlm(x, method = "arima"), h = h)
+      }
+      
+      SE <- function(x, h) {
+        forecast(stlm(x, method = "ets"), h = h)
+      }
+      
+      TH <- function(x, h) {
+        forecast(thetaf(x), h = h)
+      }
+      
+      RW <- function(x, h) {
+        rwf(x, drift = TRUE, h = h)
+      }
+      
+      SN <- function(x, h) {
+        forecast(snaive(x), h = h)
+      }
+      
+      TE <- function(x, h) {
+        forecast(thief(x, usemodel = "arima"), h = h)
+      }
+      
+      Forecast_Functions <- list(
+        "Auto_Arima"      =     AR,
+        "Tbats"           =     TB,
+        "Thetha"          =     TH)
+      
+      
+      
+      # Besteira ----------------------------------------------------------------
+      
+      # h <- 4
+      # ally <- aggts(x1)
+      # 
+      # y <- ally[,1]
+      
+      
+      # pos ---------------------------------------------------------------------
+      
+      List_Forecasts <- Forecast_Saver(y,Forecast_Functions,h)
+      
+      
+      Forecasts_Mean <- lapply(List_Forecasts, `[`, c('mean'))
+      
+      Mean_Forecasts <- matrix(unlist(Forecasts_Mean), nrow = length(Forecasts_Mean), byrow = TRUE)
+      
+      colnames(Mean_Forecasts) <- paste("h=", 1:length(Mean_Forecasts[1,]), sep = "")
+      rownames(Mean_Forecasts) <- names(Forecast_Functions)
+      
+      
+      List_of_Errors <- Cross_Calculate_Errors_CV(
+        y = y,
+        List_Functions = Forecast_Functions,
+        h = h,
+        #window = window,
+        Min_Lenght = 24,
+        Max_Fold = 5
+      )
+      
+      
+      Calculated_Errors <- Calculate_Errors(y,List_Errors = List_of_Errors)
+      
+      
+      Inverted_Errors <- lapply(Calculated_Errors,lapply,Invert_List_Accuracy)
+      
+      Weight_Matrix <- lapply(Inverted_Errors,Create_Weight_Matrix)
+      
+      
+      colSums(unlist(Weight_Matrix)  * as.matrix(Mean_Forecasts))
+      
+      
+    })
   ,.progress = T)
   
   toc()
   
-  length(Testar$Total)
-  length(Actual$Total)
+  Actual <- tail(Actual$Total,4)
   
-  Cauda <- tail(Actual$Total,4)
-  Final <- end(Cauda)
-  
-  TS_Result <- ts(Maio_Teste$Total$result,frequency = 365.25/7,start = Final)
-  
-  Erros <- as.vector(TS_Result)-Cauda
-
-  List_Results <- list(Cauda,TS_Result,Erros)
+  List_Results <- list(Act = Actual,Pred = Y_Pred)
   return(List_Results)
 }
 
-
-Resultado_Teste <- Tester_PassadO(-62,-92)
 
 Vector_Actual_Days <- c(-3,-33,-64,-94,-125,-153,-184,-153,-184,-215,-245,-276,-306,-337)
 
 
 Vector_Forecast_Days <- c(-31,-61,-92,-122,-153,-181,-212,-181,-212,-243,-273,-304,-334,-365)
 
-plan(multisession)
+plan(multisession, workers = 3L)
 Insanity <- future_map2(Vector_Actual_Days,Vector_Forecast_Days,Tester_PassadO)
+
+save(Insanity, file="fname.RData")
