@@ -39,6 +39,9 @@ ped_gaps <- Tibble_Frame %>%
 Weeks <- head(ped_gaps,-31)
 Weeks <-  tail(Weeks,- (nrow(ped_gaps) %% 7 )) #%>%
 
+tail(Weeks)
+tail(ped_gaps)
+
 Primeiro_dia <- Weeks[1][1,1]
 Primeiro_dia_string <- ymd(as.Date(unlist(Primeiro_dia)))
 Primeiro_dia_decimal <- decimal_date(as.Date(Primeiro_dia_string))
@@ -118,9 +121,12 @@ Final <- end(Cauda)
 TS_Result <- ts(SomethingTeste2$Total$result,frequency = 365.25/7,start = Final)
 
 Erros <- as.vector(TS_Result)-Cauda
-
+mean(Erros)
 Mean_Error(error = Erros)
 Mean_Absolute_Percentage_Error(y = Cauda,error = Erros)
+
+mean((100*Erros)/Cauda)
+
 
 accuracy(TS_Result,Cauda)
 sum(SomethingTeste2$Total$result - Acctual)
