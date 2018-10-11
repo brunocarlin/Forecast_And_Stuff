@@ -12,102 +12,54 @@ library(lubridate)
 library(hts)
 
 
-Tester_PassadO <- function(dias_actual,dias_forecast) {
+Tester_PassadO <- function(delay_actual,delay_forecast) {
   
   Cash_Semana <- read_delim("Cash_Semana.csv", 
                             ";", escape_double = FALSE, col_types = cols(Chave = col_date(format = "%d/%m/%Y")), 
                             locale = locale(decimal_mark = ","),trim_ws = TRUE,guess_max = 10000)
   
-  Tibble_Frame <- as.tsibble(Cash_Semana, index = Chave)
+  Tibble_df <- as.tsibble(Cash_Semana, index = Chave)  %>% fill_na(.)
   
-  ped_gaps <- Tibble_Frame %>%
-    fill_na(.)
+  Cut_df_Forecast <- head(Tibble_df,delay_forecast)
+  Cut_df_Forecast <-  tail(Cut_df_Forecast,- (nrow(Cut_df_Forecast) %% 7 ))
   
-  Weeks <- head(ped_gaps,dias_forecast)
-  Weeks <-  tail(Weeks,- (nrow(Weeks) %% 7 )) #%>%
+  First_Day <- Cut_df_Forecast[1][1, 1] %>%
+    unlist %>%
+    as.Date() %>%
+    ymd() %>% 
+    as.Date() %>%
+    decimal_date()
   
-  tail(Weeks)
-  tail(ped_gaps)
+  #Primeiro_dia_string <- ymd(as.Date(unlist(Primeiro_dia)))
+  #Primeiro_dia_decimal <- decimal_date(as.Date(Primeiro_dia_string))
   
-  Primeiro_dia <- Weeks[1][1,1]
-  Primeiro_dia_string <- ymd(as.Date(unlist(Primeiro_dia)))
-  Primeiro_dia_decimal <- decimal_date(as.Date(Primeiro_dia_string))
+  Week_Index_Vector <- rep(1:100000, each = 7, len = nrow(Cut_df_Forecast))
   
-  #group_by(year_week = yearweek(Chave)) 
-  
-  test <- rep(1:100000, each = 7, len = nrow(Weeks))
-  
-  Wekks <- as.tibble(cbind(test,Weeks[,-1]))
-  
-  
-  Fake_Weeks <- Wekks %>% 
-    group_by(test) %>%
+  Week_df_Forecast <- cbind(Week_Index_Vector,Cut_df_Forecast[,-1]) %>%
+    as.tibble() %>% 
+    group_by(Week_Index_Vector) %>%
     summarise_all(funs(sum),na.rm = T)
   
-  ALL_Y <-  Fake_Weeks[,-1]
-  ALL_Y2  <- as.matrix(ALL_Y) 
-  ALL_Y2[ALL_Y2 <1] <- 1
+  ALL_Y <-  Week_df_Forecast[,-1] %>% 
+    as.matrix()
   
-  
+  ALL_Y[ALL_Y <1] <- 1
+ 
   #Y_Season<- msts(ALL_Y2, seasonal.periods=c(4.28,52.18), start = c(2011))
-  Y_Season <- ts(ALL_Y2,frequency = 365.25/7, start = Primeiro_dia_decimal)
-  
+  Y_Season <- ts(ALL_Y,frequency = 365.25/7, start = First_Day)
   x1 <- gts(Y_Season, characters = list(c(5, 5), c(5, 5)))
   
-  
-  h <- 4
   ally <- aggts(x1)
   ally1 <- ally
-  
-  Testar <- as.list(ally1)
-  Testar<- Testar[1]
-  
-  # Actual ------------------------------------------------------------------
-  
-  
-  Weeks <- head(ped_gaps,dias_actual)
-  
-  Weeks <-  tail(Weeks,- (nrow(Weeks) %% 7 ))
-  
-  
-  Primeiro_dia <- Weeks[1][1,1]
-  Primeiro_dia_string <- ymd(as.Date(unlist(Primeiro_dia)))
-  Primeiro_dia_decimal <- decimal_date(as.Date(Primeiro_dia_string))
-  
-  #group_by(year_week = yearweek(Chave)) 
-  
-  
-  test <- rep(1:100000, each = 7, len = nrow(Weeks))
-  
-  Wekks <- as.tibble(cbind(test,Weeks[,-1]))
-  
-  
-  Fake_Weeks <- Wekks %>% 
-    group_by(test) %>%
-    summarise_all(funs(sum),na.rm = T)
-  
-  ALL_Y <-  Fake_Weeks[,-1]
-  ALL_Y2  <- as.matrix(ALL_Y) 
-  ALL_Y2[ALL_Y2 <1] <- 1
-  
-  Y_Season <- ts(ALL_Y2,frequency = 365.25/7, start = Primeiro_dia_decimal)
-  
-  x1 <- gts(Y_Season, characters = list(c(5, 5), c(5, 5)))
-  
-  h <- 4
-  ally <- aggts(x1)
-  ally1 <- ally
-  
-  Actual <- as.list(ally1)
-  Actual <- Actual[1]
+  Forecast_Training_Data <- as.list(ally1)
+  Forecast_Training_Data_Test <- Forecast_Training_Data[1] 
   
   plan(multisession)
   tic("Whole Process")
   
-  Y_Pred <-  future_map(Testar, safely(function(u) {
+  Y_Pred <-  future_map(Forecast_Training_Data_Test, safely(function(u,h = 4) {
     
     y <- u
-    h <- 4
     
     
     # Use Forecast Functions --------------------------------------------------
@@ -210,6 +162,44 @@ Tester_PassadO <- function(dias_actual,dias_forecast) {
   
   toc()
   
+  # Actual ------------------------------------------------------------------
+  
+  Cut_df_Actual <- head(Tibble_df,delay_actual)
+  
+  Cut_df_Actual <-  tail(Cut_df_Actual,- (nrow(Cut_df_Actual) %% 7 ))
+  
+  
+  First_Day <- Cut_df_Actual[1][1, 1] %>%
+    unlist %>%
+    as.Date() %>%
+    ymd() %>% 
+    as.Date() %>%
+    decimal_date()
+  
+  #group_by(year_week = yearweek(Chave)) 
+  
+  Week_Index_Vector <- rep(1:100000, each = 7, len = nrow(Cut_df_Actual))
+  
+  
+  Week_df_Actual <- cbind(Week_Index_Vector,Cut_df_Actual[,-1]) %>%
+    as.tibble() %>% 
+    group_by(Week_Index_Vector) %>%
+    summarise_all(funs(sum),na.rm = T)
+  
+  ALL_Y <-  Week_df_Actual[,-1] %>% 
+    as.matrix()
+  
+  
+  Y_Season_Actual <- ts(ALL_Y,frequency = 365.25/7, start = First_Day)
+  
+  x1 <- gts(Y_Season_Actual, characters = list(c(5, 5), c(5, 5)))
+  
+  h <- 4
+  ally <- aggts(x1)
+  ally1 <- ally
+  
+  Actual <- as.list(ally1)
+  Actual <- Actual[1]
   Actual <- tail(Actual$Total,4)
   
   List_Results <- list(Act = Actual,Pred = Y_Pred)
@@ -217,12 +207,22 @@ Tester_PassadO <- function(dias_actual,dias_forecast) {
 }
 
 
-Vector_Actual_Days <- c(-3)
-                        #,-33,-64,-94,-125,-153,-184,-153,-184,-215,-245,-276,-306,-337)
+Vector_Actual_Days <- c(-3,
+                         -33,
+                         -64,
+                         -94,
+                         -125,
+                         -153,
+                         -184,
+                         -215,
+                         -245,
+                         -276,
+                         -306,
+                         -337
+                        )
 
 
-Vector_Forecast_Days <- c(-31)
-                          #,-61,-92,-122,-153,-181,-212,-181,-212,-243,-273,-304,-334,-365)
+Vector_Forecast_Days <- Vector_Actual_Days - 28
 
 plan(multisession, workers = 3L)
 Insanity <- future_map2(Vector_Actual_Days,Vector_Forecast_Days,Tester_PassadO)
@@ -233,7 +233,7 @@ save(Insanity, file="fname.RData")
 bad_lengths <- map_lgl(Insanity, ~is.null(.x$error) == F)
 bad_techs <- Insanity %>%  discard(bad_lengths)
 
-N_Testes <- length(bad_techs)
+N_Testes <- 12
 Ano_Passado <- bad_techs[1:N_Testes]
 Temp <- lapply(Ano_Passado, `[[`, 1)
 
@@ -258,6 +258,6 @@ Up_to_fct <- apply(Forc_Matrix,2,sum)
 (Up_to_act- Up_to_fct)/Up_to_fct
 mean(Up_to_act - Up_to_fct)
 
-ok <- tibble(unlist(rbind(lapply(Act_y, as.vector),lapply(Forecast_y, as.vector))))
+#ok <- tibble(unlist(rbind(lapply(Act_y, as.vector),lapply(Forecast_y, as.vector))))
 
-names(Temp) <- c("Julho18")
+#names(Temp) <- c("Julho18")
