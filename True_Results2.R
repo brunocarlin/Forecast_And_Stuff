@@ -21,7 +21,10 @@ Tester_PassadO <- function(delay_actual,delay_forecast) {
   Tibble_df <- as.tsibble(Cash_Semana, index = Chave)  %>% fill_na(.)
   
   Cut_df_Forecast <- head(Tibble_df,delay_forecast)
-  Cut_df_Forecast <-  tail(Cut_df_Forecast,- (nrow(Cut_df_Forecast) %% 7 ))
+  
+  if (nrow(Cut_df_Actual) %% 7 != 0) {
+    Cut_df_Forecast <-  tail(Cut_df_Forecast,- (nrow(Cut_df_Forecast) %% 7 ))
+  }
   
   First_Day <- Cut_df_Forecast[1][1, 1] %>%
     unlist %>%
@@ -166,7 +169,11 @@ Tester_PassadO <- function(delay_actual,delay_forecast) {
   
   Cut_df_Actual <- head(Tibble_df,delay_actual)
   
-  Cut_df_Actual <-  tail(Cut_df_Actual,- (nrow(Cut_df_Actual) %% 7 ))
+  
+  if (nrow(Cut_df_Actual) %% 7 != 0) {
+    Cut_df_Actual <-  tail(Cut_df_Actual,- (nrow(Cut_df_Actual) %% 7 ))
+  }
+  
   
   
   First_Day <- Cut_df_Actual[1][1, 1] %>%
