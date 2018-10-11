@@ -22,7 +22,7 @@ Tester_PassadO <- function(delay_actual,delay_forecast) {
   
   Cut_df_Forecast <- head(Tibble_df,delay_forecast)
   
-  if (nrow(Cut_df_Actual) %% 7 != 0) {
+  if (nrow(Cut_df_Forecast) %% 7 != 0) {
     Cut_df_Forecast <-  tail(Cut_df_Forecast,- (nrow(Cut_df_Forecast) %% 7 ))
   }
   
